@@ -21,6 +21,7 @@ import math
 import torchvision.datasets as datasets
 import torchvision.models as models
 
+from dataset.imbalance_cifar import *
 
 class Datasubset(torch.utils.data.Dataset):
     def __init__(self, dataset, len):
@@ -294,6 +295,8 @@ def augment(opt, data_loader):
     total_iter = 0
     batch_counter = 0
     total_time = 0
+    # #jh
+    import imageio
 
     while counter < opt.aug_size:
         for batch_index, (images, labels) in enumerate(data_loader):
@@ -355,7 +358,8 @@ def augment(opt, data_loader):
 
                 img = img.astype(np.uint8)
 
-                misc.imsave(opt.save_dir + '/' + str(counter + i) + '.png', img)
+                # misc.imsave(opt.save_dir + '/' + str(counter + i) + '.png', img)
+                imageio.imwrite(opt.save_dir + '/' + str(counter + i) + '.png', img)
 
             counter += n_suc
 
@@ -400,7 +404,9 @@ def count_parameters(model):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', type=str, default='cifar100', help='dataset to augment', choices=['imagenet', 'cifar100'])
+    parser.add_argument('--dataset', type=str, default='cifar100', help='dataset to augment', choices=['imagenet', 'cifar100', 'cifar100_lt'])
+    parser.add_argument('--imb_type', type=str, default='exp', help='imbalance factor')
+    parser.add_argument('--imb_factor', type=float, default='0.1', help='imbalance ratio', choices=[0.1, 0.05, 0.01])
     parser.add_argument('--model', type=str, default='resnet32',
                         help='name of the supervisor model to load')
     parser.add_argument('--device', type=str, default='cuda:0', help='cuda or cpu')
@@ -459,6 +465,41 @@ if __name__ == '__main__':
             cifar100_test, shuffle=False, num_workers=2, batch_size=100)
 
         # load the teacher model
+        path_t = './save/models/' + opt.model + '_vanilla/ckpt_epoch_240.pth'
+        model = load_teacher(path_t, 100)
+        model.eval()
+        model.to(device)
+        opt.n_classes = 100
+
+    elif opt.dataset == 'cifar100_lt':
+        # mean and std of the training set of cifar100
+        CIFAR100_MEAN = (0.5070, 0.4865, 0.4409)
+        CIFAR100_STD = (0.2673, 0.2564, 0.2761)
+        std = np.array(CIFAR100_STD)
+        mean = np.array(CIFAR100_MEAN)
+        std = std.reshape(1, 1, 3)
+        mean = mean.reshape(1, 1, 3)
+
+        # load the data 
+        transform = transforms.Compose([ 
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize(CIFAR100_MEAN, CIFAR100_STD) 
+        ])
+
+        transform_test = transforms.Compose([ 
+            transforms.ToTensor(), 
+            transforms.Normalize(CIFAR100_MEAN, CIFAR100_STD) 
+        ])
+
+        train_dataset = IMBALANCECIFAR100(phase='train', imbalance_ratio=opt.imb_factor, root='./data',
+                imb_type=opt.imb_type)
+        data_loader = DataLoader(train_dataset, shuffle=True, num_workers=2, batch_size=opt.bs)
+
+        test_dataset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True,
+                transform=transform_test)
+        cifar100_test_loader = DataLoader(test_dataset, shuffle=False, num_workers=2, batch_size=100)
+
         path_t = './save/models/' + opt.model + '_vanilla/ckpt_epoch_240.pth'
         model = load_teacher(path_t, 100)
         model.eval()
