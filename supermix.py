@@ -425,7 +425,7 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, default='resnet32',
                         help='name of the supervisor model to load')
     parser.add_argument('--device', type=str, default='cuda:0', help='cuda or cpu')
-    parser.add_argument('--num_workers', type=int, default=0, help='number of gpus to use')
+    parser.add_argument('--num_workers', type=int, default=0, help='number of cpus to use')
     parser.add_argument('--save_dir', type=str, required=True,
                         help='output directory to save results')
     parser.add_argument('--input_dir', type=str, default='/home/aldb/outputs/imgenet/imgnet_train1',
@@ -519,6 +519,9 @@ if __name__ == '__main__':
         path_t = './save/models/' + opt.model + '_vanilla/ckpt_epoch_240.pth'
         model = load_teacher(path_t, 100)
         model.eval()
+
+        if torch.cuda.device_count() >1:
+            model = nn.DataParallel(model)
         model.to(device)
         opt.n_classes = 100
 
