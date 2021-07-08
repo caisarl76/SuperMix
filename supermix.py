@@ -521,6 +521,7 @@ if __name__ == '__main__':
         model.eval()
 
         if torch.cuda.device_count() >1:
+            print('using %d gpus'%(torch.cuda.device_count()))
             model = nn.DataParallel(model)
         model.to(device)
         opt.n_classes = 100
