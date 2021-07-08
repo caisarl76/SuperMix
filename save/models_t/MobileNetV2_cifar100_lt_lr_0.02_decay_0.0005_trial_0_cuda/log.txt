@@ -1,0 +1,26 @@
+Log file created on 2021-07-08 17:57:59.486847
+
+aug : None
+aug_size : 50000
+aug_type : None
+batch_size : 128
+dataset : cifar100_lt
+device : cuda:0
+epochs : 600
+imb_factor : 0.1
+imb_type : exp
+learning_rate : 0.02
+lr_decay_epochs : [200, 300, 400, 500]
+lr_decay_rate : 0.1
+model : MobileNetV2
+model_name : MobileNetV2_cifar100_lt_lr_0.02_decay_0.0005_trial_0_cuda
+model_path : ./save/models_t
+momentum : 0.9
+num_workers : 8
+print_freq : 50
+save_folder : ./save/models_t/MobileNetV2_cifar100_lt_lr_0.02_decay_0.0005_trial_0_cuda
+save_freq : 40
+tb_freq : 500
+trial : 0
+weight_decay : 0.0005
+

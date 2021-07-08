@@ -94,8 +94,7 @@ def main():
         n_cls = 100
     else:
         raise NotImplementedError(opt.dataset)
-    return
-    # model
+        # model
     model = model_dict[opt.model](num_classes=n_cls)
 
     # optimizer
