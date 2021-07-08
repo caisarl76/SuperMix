@@ -11,6 +11,8 @@ from torchvision import datasets, transforms
 from PIL import Image
 from helper.util import plot_tensor
 
+from dataset.imbalance_cifar import IMBALANCECIFAR10, IMBALANCECIFAR100
+
 """
 mean = {
     'cifar100': (0.5071, 0.4867, 0.4408),
@@ -74,8 +76,6 @@ class DatasetMasked(torch.utils.data.Dataset):
         if s_w == 32:
             s_w = 31
 
-
-
         rand = torch.randint(0, 32 - s_w, size=[2])
         mask[int(rand[0]):int(rand[0]) + s_w, int(rand[1]):int(rand[1]) + s_w] = 1
         mask = mask.view(1, 32, 32)
@@ -102,6 +102,29 @@ def get_data_folder():
         os.makedirs(data_folder)
 
     return data_folder
+
+
+class CIFAR100LTInstance(IMBALANCECIFAR100):
+    """CIFAR100Instance Dataset.
+    """
+
+    def __getitem__(self, index):
+
+        # if torch.__version__[0] == '0':
+
+        img, target = self.data[index], self.targets[index]
+
+        # doing this so that it is consistent with all other datasets
+        # to return a PIL Image
+        img = Image.fromarray(img)
+
+        if self.transform is not None:
+            img = self.transform(img)
+
+        if self.target_transform is not None:
+            target = self.target_transform(target)
+
+        return img, target, index
 
 
 class CIFAR100Instance(datasets.CIFAR100):
@@ -132,7 +155,7 @@ class CIFAR100Instance(datasets.CIFAR100):
         return img, target, index
 
 
-def get_cifar100_dataloaders(opt, is_instance=False):
+def get_cifar100_dataloaders(opt, is_instance=False, is_longtail=False):
     """
     cifar 100
     """
@@ -148,18 +171,22 @@ def get_cifar100_dataloaders(opt, is_instance=False):
         transforms.ToTensor(),
         transforms.Normalize((0.5071, 0.4867, 0.4408), (0.2675, 0.2565, 0.2761)),
     ])
-
-    if is_instance:
-        train_set = CIFAR100Instance(root=data_folder,
-                                     download=True,
-                                     train=True,
-                                     transform=train_transform)
-        n_data = len(train_set)
+    if not '_lt' in opt.dataset:
+        if is_instance:
+            train_set = CIFAR100Instance(root=data_folder,
+                                         download=True,
+                                         train=True,
+                                         transform=train_transform)
+            n_data = len(train_set)
+        else:
+            train_set = datasets.CIFAR100(root=data_folder,
+                                          download=True,
+                                          train=True,
+                                          transform=train_transform)
     else:
-        train_set = datasets.CIFAR100(root=data_folder,
-                                      download=True,
-                                      train=True,
-                                      transform=train_transform)
+        print('load lt dataset')
+        train_set = IMBALANCECIFAR100(phase="train", imbalance_ratio=opt.imb_factor, root=data_folder)
+        print(train_set.get_cls_num_list())
 
     # prepare the augmentation dataset
     if opt.aug_type is not None:
@@ -197,7 +224,7 @@ def get_cifar100_dataloaders(opt, is_instance=False):
         # img = train_set.__getitem__(798)
         # plot_tensor([img[0]])
         # exit()
-
+        print('concat dataset')
         train_loader = torch.utils.data.DataLoader(
             ConcatDataset(train_set, train_set_aug, len=opt.aug_size, opt=opt), batch_size=opt.batch_size, shuffle=True,
             num_workers=opt.num_workers, pin_memory=True)

@@ -9,10 +9,11 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 import torch.backends.cudnn as cudnn
-
+import torchvision.datasets as datasets
 from models import model_dict
 
 from dataset.cifar100 import get_cifar100_dataloaders
+from dataset.imbalance_cifar import IMBALANCECIFAR100, IMBALANCECIFAR10
 
 from helper.util import adjust_learning_rate, accuracy, AverageMeter, Logger, WarmUpLR
 from helper.loops import train_vanilla as train, validate
@@ -48,7 +49,9 @@ def parse_option():
                                  'resnet8x4', 'resnet32x4', 'wrn_16_1', 'wrn_16_2', 'wrn_40_1', 'wrn_40_2',
                                  'vgg8', 'vgg11', 'vgg13', 'vgg16', 'vgg19',
                                  'MobileNetV2', 'ShuffleV1', 'ShuffleV2', ])
-    parser.add_argument('--dataset', type=str, default='cifar100', choices=['cifar100'], help='dataset')
+    parser.add_argument('--dataset', type=str, default='cifar100', choices=['cifar100', 'cifar100_lt'], help='dataset')
+    parser.add_argument('--imb_type', type=str, default='exp', help='imbalance type')
+    parser.add_argument('--imb_factor', type=float, default=0.1, help='imbalance ratio')
 
     parser.add_argument('-t', '--trial', type=int, default=0, help='the experiment id')
 
@@ -86,9 +89,12 @@ def main():
     if opt.dataset == 'cifar100':
         train_loader, val_loader = get_cifar100_dataloaders(opt)
         n_cls = 100
+    elif opt.dataset =='cifar100_lt':
+        train_loader, val_loader = get_cifar100_dataloaders(opt)
+        n_cls = 100
     else:
         raise NotImplementedError(opt.dataset)
-
+    return
     # model
     model = model_dict[opt.model](num_classes=n_cls)
 
