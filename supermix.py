@@ -156,6 +156,7 @@ def mix_batch(net, data, cls_num_list, K, alpha=1, beta = 0.9999, mask_w=16, sig
 
     # case of CIFAR-100-LT and sample with class balance factor
     if not cls_num_list == None:
+        # print('mix_batch on cifar-100-lt================================')
         from numpy.random import choice
         # Normalized weights based on inverse number of effective data per class.
         effective_num = 1.0 - np.power(beta, cls_num_list)
@@ -266,7 +267,7 @@ def mix_batch(net, data, cls_num_list, K, alpha=1, beta = 0.9999, mask_w=16, sig
         _, pred_label_top2 = torch.topk(pred_mix, K, 1)
         pred_label_top2, _ = pred_label_top2.sort()
 
-        batch_mask = pred_label_top2 != top2lbl
+        batch_mask = pred_label_top2 != top2label
 
         batch_mask = batch_mask.sum(1).type(torch.FloatTensor).cuda()
         batch_mask = (batch_mask > 0).type(torch.FloatTensor).cuda()
@@ -321,7 +322,7 @@ def augment(opt, data_loader, cls_num_list):
 
             t0 = time.time()
 
-            if batch_size != opt.batch_sizes:
+            if batch_size != opt.batch_size:
                 break
 
             # use the data in the batch to generated new data
