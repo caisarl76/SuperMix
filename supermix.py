@@ -508,9 +508,17 @@ if __name__ == '__main__':
             transforms.ToTensor(),
             transforms.Normalize(CIFAR100_MEAN, CIFAR100_STD)
         ])
+        import pickle
 
-        train_dataset = IMBALANCECIFAR100(phase='train', imbalance_ratio=opt.imb_factor, root='./data',
-                                          imb_type=opt.imb_type)
+        dataset_path = 'cifar100lt_%f.p' % (opt.imb_factor)
+        if os.path.exists(dataset_path):
+            with open(dataset_path, 'rb') as file:
+                train_dataset = pickle.load(file)
+        else:
+            train_dataset = IMBALANCECIFAR100(phase='train', imbalance_ratio=opt.imb_factor, root='./data',
+                                              imb_type=opt.imb_type)
+            with open(dataset_path, 'wb') as file:
+                pickle.dump(train_dataset, file)
 
         test_dataset = torchvision.datasets.CIFAR100(root='./data', train=False, download=True,
                                                      transform=transform_test)
@@ -519,6 +527,7 @@ if __name__ == '__main__':
         path_t = './save/models/' + opt.model + '_vanilla/ckpt_epoch_240.pth'
         model = load_teacher(path_t, 100)
         model.eval()
+
 
         if torch.cuda.device_count() >1:
             print('using %d gpus'%(torch.cuda.device_count()))

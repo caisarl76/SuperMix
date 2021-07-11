@@ -184,8 +184,18 @@ def get_cifar100_dataloaders(opt, is_instance=False, is_longtail=False):
                                           train=True,
                                           transform=train_transform)
     else:
+        import pickle
+
         print('load lt dataset')
-        train_set = IMBALANCECIFAR100(phase="train", imbalance_ratio=opt.imb_factor, root=data_folder)
+        dataset_path = 'cifar100lt_%f.p' % (opt.imb_factor)
+
+        if os.path.exists(dataset_path):
+            with open(dataset_path, 'rb') as file:
+                train_set = pickle.load(file)
+        else:
+            train_set = IMBALANCECIFAR100(phase='train', imbalance_ratio=opt.imb_factor, root='./data',
+                                              imb_type=opt.imb_type)
+
         print(train_set.get_cls_num_list())
 
     # prepare the augmentation dataset
