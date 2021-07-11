@@ -421,7 +421,7 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', type=str, default='cifar100', help='dataset to augment',
                         choices=['imagenet', 'cifar100', 'cifar100_lt'])
     parser.add_argument('--imb_type', type=str, default='exp', help='imbalance factor')
-    parser.add_argument('--imb_factor', type=float, default='0.1', help='imbalance ratio', choices=[0.1, 0.05, 0.01])
+    parser.add_argument('--imb_factor', type=float, default='0.1', help='imbalance ratio', choices=[0.1, 0.02, 0.01])
     parser.add_argument('--model', type=str, default='resnet32',
                         help='name of the supervisor model to load')
     parser.add_argument('--device', type=str, default='cuda:0', help='cuda or cpu')
